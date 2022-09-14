@@ -1,0 +1,17 @@
+---
+BasedOnStyle: WebKit
+AlignConsecutiveAssignments: 'false'
+AlignTrailingComments: 'true'
+AllowShortFunctionsOnASingleLine: InlineOnly
+AlwaysBreakTemplateDeclarations: 'true'
+BreakBeforeBraces: Allman
+ColumnLimit: '120'
+MaxEmptyLinesToKeep: '2'
+NamespaceIndentation: None
+SortIncludes: 'false'
+SpaceAfterTemplateKeyword: 'false'
+SpaceBeforeCpp11BracedList: 'false'
+SpacesInAngles: 'true'
+SpacesInParentheses: 'true'
+
+...
