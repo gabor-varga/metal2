@@ -2,6 +2,9 @@
 #include <concepts>
 
 
+namespace metal
+{
+
 template< typename Value, typename Deriv >
 class Dual
 {
@@ -23,3 +26,5 @@ private:
     Value value_;
     Deriv deriv_;
 };
+
+}

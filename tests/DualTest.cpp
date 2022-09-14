@@ -7,71 +7,70 @@
 #include <memory>
 
 
+struct FunctionCalls
+{
+    int ctor = 0;
+    int dtor = 0;
+    int copy = 0;
+    int move = 0;
+    int cass = 0;
+    int mass = 0;
+
+    bool operator==( const FunctionCalls& other ) const = default;
+};
+
+std::ostream& operator<<( std::ostream& os, const FunctionCalls& object )
+{
+    os << "ctor " << object.ctor << std::endl;
+    os << "dtor " << object.dtor << std::endl;
+    os << "copy " << object.copy << std::endl;
+    os << "move " << object.move << std::endl;
+    os << "cass " << object.cass << std::endl;
+    os << "mass " << object.mass << std::endl;
+    return os;
+}
+
+
 template< int Id >
 struct Mock
 {
     Mock( int value )
         : value_{ std::make_unique< int >( value ) }
     {
-        ctor++;
+        function_calls.ctor++;
     }
 
-    ~Mock() { dtor++; }
+    ~Mock() { function_calls.dtor++; }
 
     Mock( const Mock& other )
         : value_{ std::make_unique< int >( *other.value_.get() ) }
     {
-        copy++;
+        function_calls.copy++;
     }
 
     Mock( Mock&& other ) noexcept
         : value_{ std::move( other.value_ ) }
     {
-        move++;
+        function_calls.move++;
     }
 
     Mock& operator=( const Mock& other )
     {
         value_ = other.value_;
-        cass++;
+        function_calls.cass++;
     }
 
     Mock& operator=( Mock&& other ) noexcept
     {
         value_ = std::move( other.value_ );
-        mass++;
+        function_calls.mass++;
     }
 
-    static void reset()
-    {
-        ctor = 0;
-        dtor = 0;
-        copy = 0;
-        move = 0;
-        cass = 0;
-        mass = 0;
-    }
-
-    static void summary()
-    {
-        std::cout << "-----------" << std::endl;
-        std::cout << "ctor " << ctor << std::endl;
-        std::cout << "dtor " << dtor << std::endl;
-        std::cout << "copy " << copy << std::endl;
-        std::cout << "move " << move << std::endl;
-        std::cout << "cass " << cass << std::endl;
-        std::cout << "mass " << mass << std::endl;
-        std::cout << "-----------" << std::endl;
-    }
+    static void reset() { function_calls = FunctionCalls{}; }
 
     std::unique_ptr< int > value_ = nullptr;
 
-    static int ctor;
-    static int dtor;
-    static int copy;
-    static int move;
-    static int cass;
-    static int mass;
+    static FunctionCalls function_calls;
 };
 
 using Value = Mock< 0 >;
@@ -79,111 +78,68 @@ using Deriv = Mock< 1 >;
 
 
 template<>
-int Value::ctor = 0;
-template<>
-int Value::dtor = 0;
-template<>
-int Value::copy = 0;
-template<>
-int Value::move = 0;
-template<>
-int Value::cass = 0;
-template<>
-int Value::mass = 0;
+FunctionCalls Value::function_calls = FunctionCalls{};
 
 template<>
-int Deriv::ctor = 0;
-template<>
-int Deriv::dtor = 0;
-template<>
-int Deriv::copy = 0;
-template<>
-int Deriv::move = 0;
-template<>
-int Deriv::cass = 0;
-template<>
-int Deriv::mass = 0;
+FunctionCalls Deriv::function_calls = FunctionCalls{};
 
 
-TEST_CASE( "Mock testing" )
+TEST_CASE( "Test number of function calls with different constructor arguments" )
 {
-    SECTION( "Constructor called once" )
+    const auto test_function_calls = []( const FunctionCalls& expected_function_calls )
     {
-        {
-            Dual< Value, Deriv > dual{ Value{ 1 }, Deriv{ 2 } };
-        }
-
-        REQUIRE( Value::ctor == 1 );
-        REQUIRE( Value::dtor == 2 );
-        REQUIRE( Value::copy == 0 );
-        REQUIRE( Value::move == 1 );
-        REQUIRE( Value::cass == 0 );
-        REQUIRE( Value::mass == 0 );
-
-        Value::summary();
-        Deriv::summary();
+        REQUIRE( Value::function_calls == expected_function_calls );
+        REQUIRE( Deriv::function_calls == expected_function_calls );
         Value::reset();
         Deriv::reset();
+    };
+
+    const auto perfect_move = FunctionCalls{ 1, 2, 0, 1, 0, 0 };
+    const auto non_perfect_copy = FunctionCalls{ 1, 2, 1, 0, 0, 0 };
+
+    SECTION( "Constructor with both rvalue args" )
+    {
+        {
+            metal::Dual< Value, Deriv > dual{ Value{ 1 }, Deriv{ 2 } };
+        }
+        test_function_calls( perfect_move );
     }
 
-    SECTION( "Constructor called once" )
+    SECTION( "Constructor with both lvalue args" )
     {
         {
             Value value{ 1 };
             Deriv deriv{ 1 };
-            Dual< Value, Deriv > dual{ value, deriv };
+            metal::Dual< Value, Deriv > dual{ value, deriv };
         }
-
-        Value::summary();
-        Deriv::summary();
-        Value::reset();
-        Deriv::reset();
-
-        // REQUIRE( Value::ctor == 1 );
-        // REQUIRE( Value::dtor == 1 );
-        // REQUIRE( Value::copy == 0 );
-        // REQUIRE( Value::move == 0 );
-        // REQUIRE( Value::cass == 0 );
-        // REQUIRE( Value::mass == 0 );
+        test_function_calls( perfect_move );
     }
 
-    SECTION( "Constructor called once" )
+    SECTION( "Constructor with lvalue and rvalue args" )
     {
         {
             Value value{ 1 };
-            Dual< Value, Deriv > dual{ value, Deriv{ 2 } };
+            metal::Dual< Value, Deriv > dual{ value, Deriv{ 2 } };
         }
-
-        Value::summary();
-        Deriv::summary();
-        Value::reset();
-        Deriv::reset();
-
-        // REQUIRE( Value::ctor == 1 );
-        // REQUIRE( Value::dtor == 1 );
-        // REQUIRE( Value::copy == 0 );
-        // REQUIRE( Value::move == 0 );
-        // REQUIRE( Value::cass == 0 );
-        // REQUIRE( Value::mass == 0 );
+        test_function_calls( perfect_move );
     }
 
-    SECTION( "Constructor called once" )
+    SECTION( "Constructor with rvalue and lvalue args" )
     {
         {
             Deriv deriv{ 1 };
-            Dual< Value, Deriv > dual{ Value{ 1 }, deriv };
+            metal::Dual< Value, Deriv > dual{ Value{ 1 }, deriv };
         }
+        test_function_calls( perfect_move );
+    }
 
-        Value::summary();
-        Deriv::summary();
-        Value::reset();
-        Deriv::reset();
-
-        // REQUIRE( Value::ctor == 1 );
-        // REQUIRE( Value::dtor == 1 );
-        // REQUIRE( Value::copy == 0 );
-        // REQUIRE( Value::move == 0 );
-        // REQUIRE( Value::cass == 0 );
-        // REQUIRE( Value::mass == 0 );
+    SECTION( "Constructor with both lvalue args" )
+    {
+        {
+            const Value value{ 1 };
+            const Deriv deriv{ 1 };
+            metal::Dual< Value, Deriv > dual{ value, deriv };
+        }
+        test_function_calls( non_perfect_copy );
     }
 }
