@@ -248,12 +248,6 @@ TEST_CASE( "Test number of function calls with different constructor arguments" 
             REQUIRE( y.value().is_valid() );
             REQUIRE( y.deriv().is_valid() );
 
-            // metal::Dual< Value, Deriv > z = metal::Dual< Value, Deriv >{ Value{ 1 }, Deriv{ 2 } }
-            //     + metal::Dual< Value, Deriv >{ Value{ 3 }, Deriv{ 4 } };
-
-            // auto z = metal::Dual< Value, Deriv >{ Value{ 1 }, Deriv{ 2 } }
-            //     + metal::Dual< Value, Deriv >{ Value{ 3 }, Deriv{ 4 } };
-
             REQUIRE( z.value().value() == 4 );
             REQUIRE( z.deriv().value() == 6 );
         }
