@@ -9,13 +9,6 @@ template< typename Value, typename Deriv >
 class Dual
 {
 public:
-    // template< typename T, typename V >
-    // Dual( T&& value, V&& deriv ) requires
-    //     std::is_same_v< std::remove_cvref_t< T >, Value > && std::is_same_v< std::remove_cvref_t< V >, Deriv >
-    //     : value_{ std::move( value ) }, deriv_{ std::move( deriv ) }
-    // {
-    // }
-
     Dual( const Value& value, const Deriv& deriv )
         : value_{ value }
         , deriv_{ deriv }
