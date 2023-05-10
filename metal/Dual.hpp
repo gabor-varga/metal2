@@ -1,3 +1,5 @@
+/** Copyright Gabor Varga 2023 */
+
 #include <utility>
 #include <concepts>
 
@@ -33,13 +35,13 @@ public:
     {
     }
 
-    template< typename T, typename V >
-    Dual( T value, V deriv ) requires
-        (!std::is_same_v< std::remove_cvref_t< T >, Value >) && (!std::is_same_v< std::remove_cvref_t< V >, Deriv >)
-        : value_{ value }
-        , deriv_{ deriv }
-    {
-    }
+    // template< typename T, typename V >
+    // Dual( T value, V deriv ) requires
+    //     (!std::is_same_v< std::remove_cvref_t< T >, Value >) && (!std::is_same_v< std::remove_cvref_t< V >, Deriv >)
+    //     : value_{ value }
+    //     , deriv_{ deriv }
+    // {
+    // }
 
     template< typename T, typename V >
     Dual( const Dual< T, V >& other )
