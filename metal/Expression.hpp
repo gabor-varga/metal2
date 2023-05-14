@@ -5,6 +5,10 @@
 #include <iostream>
 
 
+template< typename Input, typename Var >
+using Diff = typename Input::template Deriv< Var >;
+
+
 struct Zero
 {
     template< typename... Args >
@@ -38,6 +42,7 @@ concept IsConstant = requires( T t )
 
 
 using One = Constant< 1 >;
+using Two = Constant< 2 >;
 
 
 template< int ID_ >
@@ -67,11 +72,23 @@ class Sin;
 template< typename Input >
 class Cos;
 
+template< typename Input >
+class Squre;
+
+template< typename Input >
+class SqureRoot;
+
 template< typename Left, typename Right >
 class Add;
 
 template< typename Left, typename Right >
+class Subtract;
+
+template< typename Left, typename Right >
 class Multiply;
+
+template< typename Left, typename Right >
+class Divide;
 
 
 template< typename Input >
@@ -163,7 +180,7 @@ public:
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Negate< typename Input::template Deriv< Var > > >;
+    using Deriv = SimplifyResult< Negate< Diff< Input, Var > > >;
 };
 
 
@@ -180,7 +197,7 @@ public:
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Cos< Input >, typename Input::template Deriv< Var > > >;
+    using Deriv = SimplifyResult< Multiply< Cos< Input >, Diff< Input, Var > > >;
 };
 
 template< typename Input_ >
@@ -196,8 +213,44 @@ public:
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Negate< Sin< Input > >, typename Input::template Deriv< Var > > >;
+    using Deriv = SimplifyResult< Multiply< Negate< Sin< Input > >, Diff< Input, Var > > >;
 };
+
+
+template< typename Input_ >
+class Square
+{
+public:
+    using Input = SimplifyResult< Input_ >;
+
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& args )
+    {
+        constexpr auto tmp = Input::eval( args );
+        return tmp * tmp;
+    }
+
+    template< typename Var >
+    using Deriv = SimplifyResult< Multiply< Multiply< Two, Input >, Diff< Input, Var > > >;
+};
+
+
+template< typename Input_ >
+class SquareRoot
+{
+public:
+    using Input = SimplifyResult< Input_ >;
+
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& args )
+    {
+        return std::sqrt( Input::eval( args ) );
+    }
+
+    template< typename Var >
+    using Deriv = SimplifyResult< Multiply< Divide< One, Input >, Diff< Input, Var > > >;
+};
+
 
 template< typename Left_, typename Right_ >
 class Add
@@ -224,6 +277,30 @@ public:
 
 
 template< typename Left_, typename Right_ >
+class Subtract
+{
+private:
+    using Left = SimplifyResult< Left_ >;
+    using Right = SimplifyResult< Right_ >;
+
+    template< typename Var >
+    using LeftDeriv = typename Left::template Deriv< Var >;
+    template< typename Var >
+    using RightDeriv = typename Right::template Deriv< Var >;
+
+public:
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& args )
+    {
+        return Left::eval( args ) - Right::eval( args );
+    }
+
+    template< typename Var >
+    using Deriv = SimplifyResult< Subtract< LeftDeriv< Var >, RightDeriv< Var > > >;
+};
+
+
+template< typename Left_, typename Right_ >
 class Multiply
 {
 private:
@@ -236,9 +313,9 @@ private:
     using RightDeriv = typename Right::template Deriv< Var >;
 
     template< typename Var >
-    using ComposedLeft = SimplifyResult< Multiply< Left, RightDeriv< Var > > >;
+    using ComposedLeft = SimplifyResult< Multiply< LeftDeriv< Var >, Right > >;
     template< typename Var >
-    using ComposedRight = SimplifyResult< Multiply< Right, LeftDeriv< Var > > >;
+    using ComposedRight = SimplifyResult< Multiply< RightDeriv< Var >, Left > >;
 
 public:
     template< typename... Args >
@@ -249,6 +326,35 @@ public:
 
     template< typename Var >
     using Deriv = SimplifyResult< Add< ComposedLeft< Var >, ComposedRight< Var > > >;
+};
+
+
+template< typename Left_, typename Right_ >
+class Divide
+{
+private:
+    using Left = SimplifyResult< Left_ >;
+    using Right = SimplifyResult< Right_ >;
+
+    template< typename Var >
+    using LeftDeriv = typename Left::template Deriv< Var >;
+    template< typename Var >
+    using RightDeriv = typename Right::template Deriv< Var >;
+
+    template< typename Var >
+    using ComposedLeft = SimplifyResult< Multiply< LeftDeriv< Var >, Right > >;
+    template< typename Var >
+    using ComposedRight = SimplifyResult< Multiply< RightDeriv< Var >, Left > >;
+
+public:
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& args )
+    {
+        return Left::eval( args ) * Right::eval( args );
+    }
+
+    template< typename Var >
+    using Deriv = SimplifyResult< Divide< Subtract< ComposedLeft< Var >, ComposedRight< Var > >, Square< Right > > >;
 };
 
 
