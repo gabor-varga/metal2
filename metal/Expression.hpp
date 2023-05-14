@@ -77,33 +77,36 @@ class Multiply;
 template< typename Input >
 struct Simplify
 {
-    using Value = Input;
+    using Result = Input;
 };
+
+template< typename... Args >
+using SimplifyResult = typename Simplify< Args... >::Result;
 
 // Simplify additions
 
 template<>
 struct Simplify< Add< Zero, Zero > >
 {
-    using Value = Zero;
+    using Result = Zero;
 };
 
 template< IsConstant Left, IsConstant Right >
 struct Simplify< Add< Left, Right > >
 {
-    using Value = Constant< Left::Value + Right::Value >;
+    using Result = Constant< Left::Value + Right::Value >;
 };
 
 template< typename Left >
 struct Simplify< Add< Left, Zero > >
 {
-    using Value = typename Simplify< Left >::Value;
+    using Result = SimplifyResult< Left >;
 };
 
 template< typename Right >
 struct Simplify< Add< Zero, Right > >
 {
-    using Value = typename Simplify< Right >::Value;
+    using Result = SimplifyResult< Right >;
 };
 
 // Simplify multiplications
@@ -111,31 +114,31 @@ struct Simplify< Add< Zero, Right > >
 template< typename Left >
 struct Simplify< Multiply< Left, Zero > >
 {
-    using Value = Zero;
+    using Result = Zero;
 };
 
 template< typename Right >
 struct Simplify< Multiply< Zero, Right > >
 {
-    using Value = Zero;
+    using Result = Zero;
 };
 
 template< typename Left >
 struct Simplify< Multiply< Left, One > >
 {
-    using Value = typename Simplify< Left >::Value;
+    using Result = SimplifyResult< Left >;
 };
 
 template< typename Right >
 struct Simplify< Multiply< One, Right > >
 {
-    using Value = typename Simplify< Right >::Value;
+    using Result = SimplifyResult< Right >;
 };
 
 template< IsConstant Left, IsConstant Right >
 struct Simplify< Multiply< Left, Right > >
 {
-    using Value = Constant< Left::Value * Right::Value >;
+    using Result = Constant< Left::Value * Right::Value >;
 };
 
 // Simplify double negation
@@ -143,7 +146,7 @@ struct Simplify< Multiply< Left, Right > >
 template< typename Input >
 struct Simplify< Negate< Negate< Input > > >
 {
-    using Value = typename Simplify< Input >::Value;
+    using Result = SimplifyResult< Input >;
 };
 
 
@@ -151,7 +154,7 @@ template< typename Input_ >
 class Negate
 {
 public:
-    using Input = typename Simplify< Input_ >::Value;
+    using Input = SimplifyResult< Input_ >;
 
     template< typename... Args >
     static constexpr auto eval( const std::tuple< Args... >& args )
@@ -160,7 +163,7 @@ public:
     }
 
     template< typename Var >
-    using Deriv = typename Simplify< Negate< typename Input::template Deriv< Var > > >::Value;
+    using Deriv = SimplifyResult< Negate< typename Input::template Deriv< Var > > >;
 };
 
 
@@ -168,7 +171,7 @@ template< typename Input_ >
 class Sin
 {
 public:
-    using Input = typename Simplify< Input_ >::Value;
+    using Input = SimplifyResult< Input_ >;
 
     template< typename... Args >
     static constexpr auto eval( const std::tuple< Args... >& args )
@@ -177,14 +180,14 @@ public:
     }
 
     template< typename Var >
-    using Deriv = typename Simplify< Multiply< Cos< Input >, typename Input::template Deriv< Var > > >::Value;
+    using Deriv = SimplifyResult< Multiply< Cos< Input >, typename Input::template Deriv< Var > > >;
 };
 
 template< typename Input_ >
 class Cos
 {
 public:
-    using Input = typename Simplify< Input_ >::Value;
+    using Input = SimplifyResult< Input_ >;
 
     template< typename... Args >
     static constexpr auto eval( const std::tuple< Args... >& args )
@@ -193,17 +196,15 @@ public:
     }
 
     template< typename Var >
-    // using Deriv = typename Simplify< Negate< Multiply< Sin< Input >, typename Input::template Deriv< Var > > >
-    // >::Value;
-    using Deriv = typename Simplify< Multiply< Negate< Sin< Input > >, typename Input::template Deriv< Var > > >::Value;
+    using Deriv = SimplifyResult< Multiply< Negate< Sin< Input > >, typename Input::template Deriv< Var > > >;
 };
 
 template< typename Left_, typename Right_ >
 class Add
 {
 private:
-    using Left = typename Simplify< Left_ >::Value;
-    using Right = typename Simplify< Right_ >::Value;
+    using Left = SimplifyResult< Left_ >;
+    using Right = SimplifyResult< Right_ >;
 
     template< typename Var >
     using LeftDeriv = typename Left::template Deriv< Var >;
@@ -218,7 +219,7 @@ public:
     }
 
     template< typename Var >
-    using Deriv = typename Simplify< Add< LeftDeriv< Var >, RightDeriv< Var > > >::Value;
+    using Deriv = SimplifyResult< Add< LeftDeriv< Var >, RightDeriv< Var > > >;
 };
 
 
@@ -226,8 +227,8 @@ template< typename Left_, typename Right_ >
 class Multiply
 {
 private:
-    using Left = typename Simplify< Left_ >::Value;
-    using Right = typename Simplify< Right_ >::Value;
+    using Left = SimplifyResult< Left_ >;
+    using Right = SimplifyResult< Right_ >;
 
     template< typename Var >
     using LeftDeriv = typename Left::template Deriv< Var >;
@@ -235,9 +236,9 @@ private:
     using RightDeriv = typename Right::template Deriv< Var >;
 
     template< typename Var >
-    using ComposedLeft = typename Simplify< Multiply< Left, RightDeriv< Var > > >::Value;
+    using ComposedLeft = SimplifyResult< Multiply< Left, RightDeriv< Var > > >;
     template< typename Var >
-    using ComposedRight = typename Simplify< Multiply< Right, LeftDeriv< Var > > >::Value;
+    using ComposedRight = SimplifyResult< Multiply< Right, LeftDeriv< Var > > >;
 
 public:
     template< typename... Args >
@@ -247,7 +248,7 @@ public:
     }
 
     template< typename Var >
-    using Deriv = typename Simplify< Add< ComposedLeft< Var >, ComposedRight< Var > > >::Value;
+    using Deriv = SimplifyResult< Add< ComposedLeft< Var >, ComposedRight< Var > > >;
 };
 
 

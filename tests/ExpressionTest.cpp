@@ -39,7 +39,7 @@ TEST_CASE( "Test basic expression" )
         std::cout << typeid( V{} ).name() << std::endl;
 
         // using A = typename Simplify< Multiply< Constant< 2 >, Constant< 3 > > >::Value;
-        using A = Multiply< Constant< 2 >, Constant< 3 > >;
+        using A = typename Simplify< Multiply< Constant< 2 >, Constant< 3 > > >::Result;
         std::cout << A::eval( p ) << std::endl;
         std::cout << A::Deriv< X >::eval( p ) << std::endl;
         std::cout << typeid( A{} ).name() << std::endl;
