@@ -18,31 +18,86 @@ struct Zero
     }
 };
 
-
-template< int Value_ >
-struct Constant
+struct Half
 {
-    static constexpr auto Value = Value_;
-
     template< typename... Args >
     static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
     {
-        return Value;
+        return 0.5;
     }
 
     template< typename Var >
     using Deriv = Zero;
 };
 
-template< typename T >
-concept IsConstant = requires( T t )
+struct One
 {
-    []< int Value >( Constant< Value >& ) {}( t );
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
+    {
+        return 1;
+    }
+
+    template< typename Var >
+    using Deriv = Zero;
+};
+
+struct Two
+{
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
+    {
+        return 2;
+    }
+
+    template< typename Var >
+    using Deriv = Zero;
+};
+
+struct Three
+{
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
+    {
+        return 3;
+    }
+
+    template< typename Var >
+    using Deriv = Zero;
 };
 
 
-using One = Constant< 1 >;
-using Two = Constant< 2 >;
+template< typename T >
+class Constant
+{
+public:
+    constexpr Constant( T value )
+        : value_{ value }
+    {
+    }
+
+    template< typename... Args >
+    constexpr auto eval( const std::tuple< Args... >& /**args*/ ) const
+    {
+        return value_;
+    }
+
+    template< typename Var >
+    using Deriv = Zero;
+
+private:
+    T value_;
+};
+
+
+// template< typename Type, typename T >
+// concept IsConstant = std::is_same_v< Type, Constant< T > >;
+
+// using One = Constant< 1 >;
+// using Two = Constant< 2 >;
+
+// static constexpr Constant One{ 1 };
+// static constexpr Constant Two{ 2 };
 
 
 template< int ID_ >
@@ -108,12 +163,6 @@ struct Simplify< Add< Zero, Zero > >
     using Result = Zero;
 };
 
-template< IsConstant Left, IsConstant Right >
-struct Simplify< Add< Left, Right > >
-{
-    using Result = Constant< Left::Value + Right::Value >;
-};
-
 template< typename Left >
 struct Simplify< Add< Left, Zero > >
 {
@@ -124,6 +173,26 @@ template< typename Right >
 struct Simplify< Add< Zero, Right > >
 {
     using Result = SimplifyResult< Right >;
+};
+
+// Simplify subtraction
+
+template<>
+struct Simplify< Subtract< Zero, Zero > >
+{
+    using Result = Zero;
+};
+
+template< typename Left >
+struct Simplify< Subtract< Left, Zero > >
+{
+    using Result = SimplifyResult< Left >;
+};
+
+template< typename Right >
+struct Simplify< Subtract< Zero, Right > >
+{
+    using Result = SimplifyResult< Negate< Right > >;
 };
 
 // Simplify multiplications
@@ -152,11 +221,32 @@ struct Simplify< Multiply< One, Right > >
     using Result = SimplifyResult< Right >;
 };
 
-template< IsConstant Left, IsConstant Right >
-struct Simplify< Multiply< Left, Right > >
+// Simplify division
+
+template< typename Left >
+struct Simplify< Divide< Left, Zero > >
 {
-    using Result = Constant< Left::Value * Right::Value >;
+    static_assert( "Division by zero" );
 };
+
+template< typename Right >
+struct Simplify< Divide< Zero, Right > >
+{
+    using Result = Zero;
+};
+
+template< typename Left >
+struct Simplify< Divide< Left, One > >
+{
+    using Result = SimplifyResult< Left >;
+};
+
+// Add back when "reciprocal" is added
+// template< typename Right >
+// struct Simplify< Divide< One, Right > >
+// {
+//     using Result = SimplifyResult< Right >;
+// };
 
 // Simplify double negation
 
@@ -226,12 +316,30 @@ public:
     template< typename... Args >
     static constexpr auto eval( const std::tuple< Args... >& args )
     {
-        constexpr auto tmp = Input::eval( args );
+        const auto tmp = Input::eval( args );
         return tmp * tmp;
     }
 
     template< typename Var >
     using Deriv = SimplifyResult< Multiply< Multiply< Two, Input >, Diff< Input, Var > > >;
+};
+
+
+template< typename Input_ >
+class Cube
+{
+public:
+    using Input = SimplifyResult< Input_ >;
+
+    template< typename... Args >
+    static constexpr auto eval( const std::tuple< Args... >& args )
+    {
+        const auto tmp = Input::eval( args );
+        return tmp * tmp * tmp;
+    }
+
+    template< typename Var >
+    using Deriv = SimplifyResult< Multiply< Multiply< Three, Square< Input > >, Diff< Input, Var > > >;
 };
 
 
@@ -248,7 +356,7 @@ public:
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Divide< One, Input >, Diff< Input, Var > > >;
+    using Deriv = SimplifyResult< Multiply< Divide< Half, SquareRoot< Input > >, Diff< Input, Var > > >;
 };
 
 
@@ -350,7 +458,7 @@ public:
     template< typename... Args >
     static constexpr auto eval( const std::tuple< Args... >& args )
     {
-        return Left::eval( args ) * Right::eval( args );
+        return Left::eval( args ) / Right::eval( args );
     }
 
     template< typename Var >
@@ -359,14 +467,78 @@ public:
 
 
 template< typename Input, int ID >
-constexpr auto diff( Input input, Variable< ID > var )
+constexpr auto diff( Input, Variable< ID > )
 {
     return typename Input::template Deriv< Variable< ID > >{};
 }
 
 
-template< int ID >
-constexpr auto operator-( Variable< ID > var )
+template< typename Input >
+constexpr auto operator-( Input )
 {
-    return Negate< Variable< ID > >{};
+    return Negate< Input >{};
+}
+
+template< typename Left, typename Right >
+constexpr auto operator+( Left, Right )
+{
+    return Add< Left, Right >{};
+}
+
+template< typename Left, typename Right >
+constexpr auto operator-( Left, Right )
+{
+    return Subtract< Left, Right >{};
+}
+
+template< typename Left, typename Right >
+constexpr auto operator*( Left, Right )
+{
+    return Multiply< Left, Right >{};
+}
+
+template< typename Left, typename Right >
+constexpr auto operator/( Left, Right )
+{
+    return Divide< Left, Right >{};
+}
+
+template< typename Input >
+constexpr auto square( Input )
+{
+    return Square< Input >{};
+}
+
+template< typename Input >
+constexpr auto cube( Input )
+{
+    return Cube< Input >{};
+}
+
+template< typename Input >
+constexpr auto sqrt( Input )
+{
+    return SquareRoot< Input >{};
+}
+
+template< typename Input >
+constexpr auto sin( Input )
+{
+    return Sin< Input >{};
+}
+
+template< typename Input >
+constexpr auto cos( Input )
+{
+    return Cos< Input >{};
+}
+
+constexpr auto orbital_period( auto sma, auto gm )
+{
+    return sqrt( cube( sma ) / gm );
+}
+
+constexpr auto test_func( auto x, auto y )
+{
+    return sin( x ) + cos( y );
 }
