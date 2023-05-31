@@ -20,7 +20,8 @@ constexpr auto diff( Input input, Var )
 
 struct Zero
 {
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > ) const
     {
         return 0;
     }
@@ -36,7 +37,8 @@ struct Zero
 
 struct One
 {
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > ) const
     {
         return 1;
     }
@@ -59,7 +61,8 @@ public:
     {
     }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > ) const
     {
         return value_;
     }
@@ -77,25 +80,16 @@ private:
 };
 
 
-template< int ID_, typename T >
+template< int ID_ >
 class Variable
 {
 public:
     static constexpr int ID = ID_;
 
-    constexpr Variable( T value )
-        : value_{ value }
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-    }
-
-    void set( T value )
-    {
-        value_ = value;
-    }
-
-    constexpr auto eval() const
-    {
-        return value_;
+        return std::get< ID >( args );
     }
 
     template< typename Var >
@@ -112,13 +106,7 @@ public:
     }
 
     std::string str() const { return fmt::format( "Var_{0}", ID ); }
-
-private:
-    T value_;
 };
-
-template< int ID >
-using Double = Variable< ID, double >;
 
 // Forward declares
 
@@ -232,9 +220,10 @@ public:
 
     constexpr auto input() const { return input_; }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return -input_.eval();
+        return -input_.eval( args );
     }
 
     template< typename Var >
@@ -259,9 +248,10 @@ public:
     {
     }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return std::sin( input_.eval() );
+        return std::sin( input_.eval( args ) );
     }
 
     template< typename Var >
@@ -285,9 +275,10 @@ public:
     {
     }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return std::cos( input_.eval() );
+        return std::cos( input_.eval( args ) );
     }
 
     template< typename Var >
@@ -312,9 +303,10 @@ public:
     {
     }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        const auto tmp = input_.eval();
+        const auto tmp = input_.eval( args );
         return tmp * tmp;
     }
 
@@ -340,9 +332,10 @@ public:
     {
     }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        const auto tmp = input_.eval();
+        const auto tmp = input_.eval( args );
         return tmp * tmp * tmp;
     }
 
@@ -368,9 +361,10 @@ public:
     {
     }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return std::sqrt( input_.eval() );
+        return std::sqrt( input_.eval( args ) );
     }
 
     template< typename Var >
@@ -399,9 +393,10 @@ public:
     constexpr auto left() const { return left_; }
     constexpr auto right() const { return right_; }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return left_.eval() + right_.eval();
+        return left_.eval( args ) + right_.eval( args );
     }
 
     template< typename Var >
@@ -431,9 +426,10 @@ public:
     constexpr auto left() const { return left_; }
     constexpr auto right() const { return right_; }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return left_.eval() - right_.eval();
+        return left_.eval( args ) - right_.eval( args );
     }
 
     template< typename Var >
@@ -463,9 +459,10 @@ public:
     constexpr auto left() const { return left_; }
     constexpr auto right() const { return right_; }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return left_.eval() * right_.eval();
+        return left_.eval( args ) * right_.eval( args );
     }
 
     template< typename Var >
@@ -495,9 +492,10 @@ public:
     constexpr auto left() const { return left_; }
     constexpr auto right() const { return right_; }
 
-    constexpr auto eval() const
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return left_.eval() / right_.eval();
+        return left_.eval( args ) / right_.eval( args );
     }
 
     template< typename Var >
