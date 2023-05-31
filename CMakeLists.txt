@@ -19,7 +19,7 @@ add_link_options(-fsanitize=address)
 add_library(dual metal/Parameter.cpp)
 
 add_executable(test_expression tests/ExpressionTest.cpp)
-target_link_libraries(test_expression PRIVATE dual Catch2::Catch2WithMain)
+target_link_libraries(test_expression PRIVATE dual Catch2::Catch2WithMain fmt)
 
 add_executable(test_dual tests/DualTest.cpp)
 target_link_libraries(test_dual PRIVATE dual Catch2::Catch2WithMain)

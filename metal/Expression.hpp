@@ -3,69 +3,52 @@
 #include <cmath>
 #include <tuple>
 #include <iostream>
+#include <fmt/core.h>
 
 
-template< typename Input, typename Var >
-using Diff = typename Input::template Deriv< Var >;
+template< typename Var, typename Input >
+constexpr auto diff( Input input )
+{
+    return simplify( input.template deriv< Var >() );
+}
 
+template< typename Var, typename Input >
+constexpr auto diff( Input input, Var )
+{
+    return simplify( input.template deriv< Var >() );
+}
 
 struct Zero
 {
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
+    constexpr auto eval() const
     {
         return 0;
     }
-};
-
-struct Half
-{
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
-    {
-        return 0.5;
-    }
 
     template< typename Var >
-    using Deriv = Zero;
+    constexpr auto deriv() const
+    {
+        // static_assert(false, "Can not differentiate Zero");
+    }
+
+    std::string str() const { return "Zero"; }
 };
 
 struct One
 {
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
+    constexpr auto eval() const
     {
         return 1;
     }
 
     template< typename Var >
-    using Deriv = Zero;
-};
-
-struct Two
-{
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
+    constexpr auto deriv() const
     {
-        return 2;
+        return Zero{};
     }
 
-    template< typename Var >
-    using Deriv = Zero;
+    std::string str() const { return "One"; }
 };
-
-struct Three
-{
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& /**args*/ )
-    {
-        return 3;
-    }
-
-    template< typename Var >
-    using Deriv = Zero;
-};
-
 
 template< typename T >
 class Constant
@@ -76,45 +59,66 @@ public:
     {
     }
 
-    template< typename... Args >
-    constexpr auto eval( const std::tuple< Args... >& /**args*/ ) const
+    constexpr auto eval() const
     {
         return value_;
     }
 
     template< typename Var >
-    using Deriv = Zero;
+    constexpr auto deriv() const
+    {
+        return Zero{};
+    }
+
+    std::string str() const { return fmt::format( "{0}", value_ ); }
 
 private:
     T value_;
 };
 
 
-// template< typename Type, typename T >
-// concept IsConstant = std::is_same_v< Type, Constant< T > >;
-
-// using One = Constant< 1 >;
-// using Two = Constant< 2 >;
-
-// static constexpr Constant One{ 1 };
-// static constexpr Constant Two{ 2 };
-
-
-template< int ID_ >
+template< int ID_, typename T >
 class Variable
 {
 public:
     static constexpr int ID = ID_;
 
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Variable( T value )
+        : value_{ value }
     {
-        return std::get< ID >( args );
+    }
+
+    void set( T value )
+    {
+        value_ = value;
+    }
+
+    constexpr auto eval() const
+    {
+        return value_;
     }
 
     template< typename Var >
-    using Deriv = std::conditional_t< Var::ID == ID, One, Zero >;
+    constexpr auto deriv() const
+    {
+        if constexpr ( Var::ID == ID )
+        {
+            return One{};
+        }
+        else
+        {
+            return Zero{};
+        }
+    }
+
+    std::string str() const { return fmt::format( "Var_{0}", ID ); }
+
+private:
+    T value_;
 };
+
+template< int ID >
+using Double = Variable< ID, double >;
 
 // Forward declares
 
@@ -146,396 +150,453 @@ template< typename Left, typename Right >
 class Divide;
 
 
-template< typename Input >
-struct Simplify
-{
-    using Result = Input;
-};
-
-template< typename... Args >
-using SimplifyResult = typename Simplify< Args... >::Result;
-
-// Simplify additions
-
-template<>
-struct Simplify< Add< Zero, Zero > >
-{
-    using Result = Zero;
-};
-
-template< typename Left >
-struct Simplify< Add< Left, Zero > >
-{
-    using Result = SimplifyResult< Left >;
-};
-
-template< typename Right >
-struct Simplify< Add< Zero, Right > >
-{
-    using Result = SimplifyResult< Right >;
-};
-
-// Simplify subtraction
-
-template<>
-struct Simplify< Subtract< Zero, Zero > >
-{
-    using Result = Zero;
-};
-
-template< typename Left >
-struct Simplify< Subtract< Left, Zero > >
-{
-    using Result = SimplifyResult< Left >;
-};
-
-template< typename Right >
-struct Simplify< Subtract< Zero, Right > >
-{
-    using Result = SimplifyResult< Negate< Right > >;
-};
-
-// Simplify multiplications
-
-template< typename Left >
-struct Simplify< Multiply< Left, Zero > >
-{
-    using Result = Zero;
-};
-
-template< typename Right >
-struct Simplify< Multiply< Zero, Right > >
-{
-    using Result = Zero;
-};
-
-template< typename Left >
-struct Simplify< Multiply< Left, One > >
-{
-    using Result = SimplifyResult< Left >;
-};
-
-template< typename Right >
-struct Simplify< Multiply< One, Right > >
-{
-    using Result = SimplifyResult< Right >;
-};
-
-// Simplify division
-
-template< typename Left >
-struct Simplify< Divide< Left, Zero > >
-{
-    static_assert( "Division by zero" );
-};
-
-template< typename Right >
-struct Simplify< Divide< Zero, Right > >
-{
-    using Result = Zero;
-};
-
-template< typename Left >
-struct Simplify< Divide< Left, One > >
-{
-    using Result = SimplifyResult< Left >;
-};
-
-// Add back when "reciprocal" is added
-// template< typename Right >
-// struct Simplify< Divide< One, Right > >
+// template< typename Input >
+// class Simplify
 // {
-//     using Result = SimplifyResult< Right >;
+// public:
+
+
+// private:
 // };
 
-// Simplify double negation
+template< typename Input >
+constexpr auto simplify( Input input )
+{
+    return input;
+}
+
+template< typename Left >
+constexpr auto simplify( Add< Left, Zero > input )
+{
+    return input.left();
+}
+
+template< typename Right >
+constexpr auto simplify( Add< Zero, Right > input )
+{
+    return input.right();
+}
+
+template< typename Left >
+constexpr auto simplify( Subtract< Left, Zero > input )
+{
+    return input.left();
+}
+
+template< typename Right >
+constexpr auto simplify( Subtract< Zero, Right > input )
+{
+    return -input.right();
+}
+
+template< typename Left >
+constexpr auto simplify( Multiply< Left, Zero > )
+{
+    return Zero{};
+}
+
+template< typename Right >
+constexpr auto simplify( Multiply< Zero, Right > )
+{
+    return Zero{};
+}
+
+template< typename Left >
+constexpr auto simplify( Multiply< Left, One > input )
+{
+    return input.left();
+}
+
+template< typename Right >
+constexpr auto simplify( Multiply< One, Right > input )
+{
+    return input.right();
+}
+
 
 template< typename Input >
-struct Simplify< Negate< Negate< Input > > >
+constexpr auto simplify( Negate< Negate< Input > > input )
 {
-    using Result = SimplifyResult< Input >;
-};
+    return input.input().input();
+}
 
 
-template< typename Input_ >
+template< typename Input >
 class Negate
 {
 public:
-    using Input = SimplifyResult< Input_ >;
-
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Negate( Input input )
+        : input_{ input }
     {
-        return -Input::eval( args );
+    }
+
+    constexpr auto input() const { return input_; }
+
+    constexpr auto eval() const
+    {
+        return -input_.eval();
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Negate< Diff< Input, Var > > >;
+    constexpr auto deriv() const
+    {
+        return -diff< Var >( input_ );
+    }
+
+    std::string str() const { return fmt::format( "(-{0})", input_.str() ); }
+
+private:
+    Input input_;
 };
 
 
-template< typename Input_ >
+template< typename Input >
 class Sin
 {
 public:
-    using Input = SimplifyResult< Input_ >;
-
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Sin( Input input )
+        : input_{ input }
     {
-        return std::sin( Input::eval( args ) );
+    }
+
+    constexpr auto eval() const
+    {
+        return std::sin( input_.eval() );
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Cos< Input >, Diff< Input, Var > > >;
+    constexpr auto deriv() const
+    {
+        return cos( input_ ) * diff< Var >( input_ );
+    }
+
+    std::string str() const { return fmt::format( "sin({0})", input_.str() ); }
+
+private:
+    Input input_;
 };
 
-template< typename Input_ >
+template< typename Input >
 class Cos
 {
 public:
-    using Input = SimplifyResult< Input_ >;
-
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Cos( Input input )
+        : input_{ input }
     {
-        return std::cos( Input::eval( args ) );
+    }
+
+    constexpr auto eval() const
+    {
+        return std::cos( input_.eval() );
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Negate< Sin< Input > >, Diff< Input, Var > > >;
+    constexpr auto deriv() const
+    {
+        return -sin( input_ ) * diff< Var >( input_ );
+    }
+
+    std::string str() const { return fmt::format( "cos({0})", input_.str() ); }
+
+private:
+    Input input_;
 };
 
 
-template< typename Input_ >
+template< typename Input >
 class Square
 {
 public:
-    using Input = SimplifyResult< Input_ >;
-
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Square( Input input )
+        : input_{ input }
     {
-        const auto tmp = Input::eval( args );
+    }
+
+    constexpr auto eval() const
+    {
+        const auto tmp = input_.eval();
         return tmp * tmp;
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Multiply< Two, Input >, Diff< Input, Var > > >;
+    constexpr auto deriv() const
+    {
+        return Constant{ 2 } * input_ * diff< Var >( input_ );
+    }
+
+    std::string str() const { return fmt::format( "{0}^2", input_.str() ); }
+
+private:
+    Input input_;
 };
 
 
-template< typename Input_ >
+template< typename Input >
 class Cube
 {
 public:
-    using Input = SimplifyResult< Input_ >;
-
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Cube( Input input )
+        : input_{ input }
     {
-        const auto tmp = Input::eval( args );
+    }
+
+    constexpr auto eval() const
+    {
+        const auto tmp = input_.eval();
         return tmp * tmp * tmp;
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Multiply< Three, Square< Input > >, Diff< Input, Var > > >;
+    constexpr auto deriv() const
+    {
+        return Constant{ 3 } * square( input_ ) * diff< Var >( input_ );
+    }
+
+    std::string str() const { return fmt::format( "{0}^3", input_.str() ); }
+
+private:
+    Input input_;
 };
 
 
-template< typename Input_ >
+template< typename Input >
 class SquareRoot
 {
 public:
-    using Input = SimplifyResult< Input_ >;
-
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr SquareRoot( Input input )
+        : input_{ input }
     {
-        return std::sqrt( Input::eval( args ) );
+    }
+
+    constexpr auto eval() const
+    {
+        return std::sqrt( input_.eval() );
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Multiply< Divide< Half, SquareRoot< Input > >, Diff< Input, Var > > >;
+    constexpr auto deriv() const
+    {
+        return Constant{ 0.5 } / sqrt( input_ ) * diff< Var >( input_ );
+    }
+
+    std::string str() const { return fmt::format( "sqrt({0})", input_.str() ); }
+
+private:
+    Input input_;
 };
 
 
-template< typename Left_, typename Right_ >
+template< typename Left, typename Right >
 class Add
 {
-private:
-    using Left = SimplifyResult< Left_ >;
-    using Right = SimplifyResult< Right_ >;
-
-    template< typename Var >
-    using LeftDeriv = typename Left::template Deriv< Var >;
-    template< typename Var >
-    using RightDeriv = typename Right::template Deriv< Var >;
-
 public:
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Add( Left left, Right right )
+        : left_{ left }
+        , right_{ right}
     {
-        return Left::eval( args ) + Right::eval( args );
+    }
+
+    constexpr auto left() const { return left_; }
+    constexpr auto right() const { return right_; }
+
+    constexpr auto eval() const
+    {
+        return left_.eval() + right_.eval();
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Add< LeftDeriv< Var >, RightDeriv< Var > > >;
+    constexpr auto deriv() const
+    {
+        return diff< Var >( left_ ) + diff< Var >( right_ );
+    }
+
+    std::string str() const { return fmt::format( "({0} + {1})", left_.str(), right_.str() ); }
+
+private:
+    Left left_;
+    Right right_;
 };
 
 
-template< typename Left_, typename Right_ >
+template< typename Left, typename Right >
 class Subtract
 {
-private:
-    using Left = SimplifyResult< Left_ >;
-    using Right = SimplifyResult< Right_ >;
-
-    template< typename Var >
-    using LeftDeriv = typename Left::template Deriv< Var >;
-    template< typename Var >
-    using RightDeriv = typename Right::template Deriv< Var >;
-
 public:
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Subtract( Left left, Right right )
+        : left_{ left }
+        , right_{ right}
     {
-        return Left::eval( args ) - Right::eval( args );
+    }
+
+    constexpr auto left() const { return left_; }
+    constexpr auto right() const { return right_; }
+
+    constexpr auto eval() const
+    {
+        return left_.eval() - right_.eval();
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Subtract< LeftDeriv< Var >, RightDeriv< Var > > >;
+    constexpr auto deriv() const
+    {
+        return diff< Var >( left_ ) - diff< Var >( right_ );
+    }
+
+    std::string str() const { return fmt::format( "({0} - {1})", left_.str(), right_.str() ); }
+
+private:
+    Left left_;
+    Right right_;
 };
 
 
-template< typename Left_, typename Right_ >
+template< typename Left, typename Right >
 class Multiply
 {
-private:
-    using Left = SimplifyResult< Left_ >;
-    using Right = SimplifyResult< Right_ >;
-
-    template< typename Var >
-    using LeftDeriv = typename Left::template Deriv< Var >;
-    template< typename Var >
-    using RightDeriv = typename Right::template Deriv< Var >;
-
-    template< typename Var >
-    using ComposedLeft = SimplifyResult< Multiply< LeftDeriv< Var >, Right > >;
-    template< typename Var >
-    using ComposedRight = SimplifyResult< Multiply< RightDeriv< Var >, Left > >;
-
 public:
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Multiply( Left left, Right right )
+        : left_{ left }
+        , right_{ right}
     {
-        return Left::eval( args ) * Right::eval( args );
+    }
+
+    constexpr auto left() const { return left_; }
+    constexpr auto right() const { return right_; }
+
+    constexpr auto eval() const
+    {
+        return left_.eval() * right_.eval();
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Add< ComposedLeft< Var >, ComposedRight< Var > > >;
+    constexpr auto deriv() const
+    {
+        return diff< Var >( left_ ) * right_ + diff< Var >( right_ ) * left_;
+    }
+
+    std::string str() const { return fmt::format( "({0} * {1})", left_.str(), right_.str() ); }
+
+private:
+    Left left_;
+    Right right_;
 };
 
 
-template< typename Left_, typename Right_ >
+template< typename Left, typename Right >
 class Divide
 {
-private:
-    using Left = SimplifyResult< Left_ >;
-    using Right = SimplifyResult< Right_ >;
-
-    template< typename Var >
-    using LeftDeriv = typename Left::template Deriv< Var >;
-    template< typename Var >
-    using RightDeriv = typename Right::template Deriv< Var >;
-
-    template< typename Var >
-    using ComposedLeft = SimplifyResult< Multiply< LeftDeriv< Var >, Right > >;
-    template< typename Var >
-    using ComposedRight = SimplifyResult< Multiply< RightDeriv< Var >, Left > >;
-
 public:
-    template< typename... Args >
-    static constexpr auto eval( const std::tuple< Args... >& args )
+    constexpr Divide( Left left, Right right )
+        : left_{ left }
+        , right_{ right}
     {
-        return Left::eval( args ) / Right::eval( args );
+    }
+
+    constexpr auto left() const { return left_; }
+    constexpr auto right() const { return right_; }
+
+    constexpr auto eval() const
+    {
+        return left_.eval() / right_.eval();
     }
 
     template< typename Var >
-    using Deriv = SimplifyResult< Divide< Subtract< ComposedLeft< Var >, ComposedRight< Var > >, Square< Right > > >;
+    constexpr auto deriv() const
+    {
+        return ( diff< Var >( left_ ) * right_ - diff< Var >( right_ ) * left_ ) / square( right_ );
+    }
+
+    std::string str() const { return fmt::format( "({0} / {1})", left_.str(), right_.str() ); }
+
+private:
+    Left left_;
+    Right right_;
 };
 
 
-template< typename Input, int ID >
-constexpr auto diff( Input, Variable< ID > )
-{
-    return typename Input::template Deriv< Variable< ID > >{};
-}
+// template< typename Input, int ID, typename T >
+// constexpr auto diff( Input input, Variable< ID, T > )
+// {
+//     return typename input.deriv< Variable< ID, T > >{};
+// }
 
 
 template< typename Input >
-constexpr auto operator-( Input )
+constexpr auto operator-( Input input )
 {
-    return Negate< Input >{};
+    return simplify( Negate< Input >{ input } );
 }
 
 template< typename Left, typename Right >
-constexpr auto operator+( Left, Right )
+constexpr auto operator+( Left left, Right right )
 {
-    return Add< Left, Right >{};
+    return simplify( Add{ left, right } );
 }
 
 template< typename Left, typename Right >
-constexpr auto operator-( Left, Right )
+constexpr auto operator-( Left left, Right right )
 {
-    return Subtract< Left, Right >{};
+    return simplify( Subtract{ left, right } );
 }
 
 template< typename Left, typename Right >
-constexpr auto operator*( Left, Right )
+constexpr auto operator*( Left left, Right right )
 {
-    return Multiply< Left, Right >{};
+    return simplify( Multiply{ left, right } );
+}
+
+template< typename Left >
+constexpr auto operator*( Left left, double right )
+{
+    return simplify( Multiply{ Constant{ right }, left } );
+}
+
+template< typename Right >
+constexpr auto operator*( double left, Right right )
+{
+    return simplify( Multiply{ Constant{ left }, right } );
 }
 
 template< typename Left, typename Right >
-constexpr auto operator/( Left, Right )
+constexpr auto operator/( Left left, Right right )
 {
-    return Divide< Left, Right >{};
+    return simplify( Divide{ left, right } );
 }
 
 template< typename Input >
-constexpr auto square( Input )
+constexpr auto square( Input input )
 {
-    return Square< Input >{};
+    return simplify( Square{ input } );
 }
 
 template< typename Input >
-constexpr auto cube( Input )
+constexpr auto cube( Input input )
 {
-    return Cube< Input >{};
+    return simplify( Cube{ input } );
 }
 
 template< typename Input >
-constexpr auto sqrt( Input )
+constexpr auto sqrt( Input input )
 {
-    return SquareRoot< Input >{};
+    return simplify( SquareRoot{ input } );
 }
 
 template< typename Input >
-constexpr auto sin( Input )
+constexpr auto sin( Input input )
 {
-    return Sin< Input >{};
+    return simplify( Sin{ input } );
 }
 
 template< typename Input >
-constexpr auto cos( Input )
+constexpr auto cos( Input input )
 {
-    return Cos< Input >{};
+    return simplify( Cos{ input } );
 }
 
 constexpr auto orbital_period( auto sma, auto gm )
 {
-    return sqrt( cube( sma ) / gm );
+    constexpr double TWOPI = 2 * M_PI;
+    return Constant{ TWOPI } * sqrt( cube( sma ) / gm );
 }
 
 constexpr auto test_func( auto x, auto y )
