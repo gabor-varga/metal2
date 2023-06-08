@@ -61,6 +61,8 @@ public:
     {
     }
 
+    const auto value() const { return value_; }
+
     template< typename... Args >
     constexpr auto eval( std::tuple< Args... > ) const
     {
@@ -86,6 +88,11 @@ class Variable
 public:
     static constexpr int ID = ID_;
 
+    Variable( std::string_view name = std::string{} )
+        : name_{ name.empty() ? fmt::format( "Var_{0}", ID ) : name }
+    {
+    }
+
     template< typename... Args >
     constexpr auto eval( std::tuple< Args... > args ) const
     {
@@ -105,13 +112,16 @@ public:
         }
     }
 
-    std::string str() const { return fmt::format( "Var_{0}", ID ); }
+    std::string str() const { return name_; }
+
+private:
+    std::string name_;
 };
 
 // Forward declares
 
-template< typename Input >
-class Negate;
+// template< typename Input >
+// class Negate;
 
 template< typename Input >
 class Sin;
@@ -139,81 +149,23 @@ class Divide;
 
 
 // template< typename Input >
-// class Simplify
+// constexpr auto subexp( Input input )
 // {
-// public:
+
+// }
+
+// template< typename... Args >
+// constexpr auto cse( Args... args )
+// {
+
+// }
 
 
-// private:
-// };
-
-template< typename Input >
-constexpr auto simplify( Input input )
-{
-    return input;
-}
-
-template< typename Left >
-constexpr auto simplify( Add< Left, Zero > input )
-{
-    return input.left();
-}
-
-template< typename Right >
-constexpr auto simplify( Add< Zero, Right > input )
-{
-    return input.right();
-}
-
-template< typename Left >
-constexpr auto simplify( Subtract< Left, Zero > input )
-{
-    return input.left();
-}
-
-template< typename Right >
-constexpr auto simplify( Subtract< Zero, Right > input )
-{
-    return -input.right();
-}
-
-template< typename Left >
-constexpr auto simplify( Multiply< Left, Zero > )
-{
-    return Zero{};
-}
-
-template< typename Right >
-constexpr auto simplify( Multiply< Zero, Right > )
-{
-    return Zero{};
-}
-
-template< typename Left >
-constexpr auto simplify( Multiply< Left, One > input )
-{
-    return input.left();
-}
-
-template< typename Right >
-constexpr auto simplify( Multiply< One, Right > input )
-{
-    return input.right();
-}
-
-
-template< typename Input >
-constexpr auto simplify( Negate< Negate< Input > > input )
-{
-    return input.input().input();
-}
-
-
-template< typename Input >
-class Negate
+template< typename Input, typename Operator >
+class UnaryOperator
 {
 public:
-    constexpr Negate( Input input )
+    constexpr UnaryOperator( Input input )
         : input_{ input }
     {
     }
@@ -223,20 +175,41 @@ public:
     template< typename... Args >
     constexpr auto eval( std::tuple< Args... > args ) const
     {
-        return -input_.eval( args );
+        return Operator::eval( input_, args );
     }
 
     template< typename Var >
     constexpr auto deriv() const
     {
-        return -diff< Var >( input_ );
+        return Operator::template deriv< Var >( input_ );
     }
 
-    std::string str() const { return fmt::format( "(-{0})", input_.str() ); }
+    std::string str() const { return Operator::str( input_.str() ); }
 
 private:
     Input input_;
 };
+
+struct NegateOp
+{
+    template< typename Input, typename... Args >
+    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    {
+        return -input.eval( args );
+    }
+
+    template< typename Var, typename Input >
+    static constexpr auto deriv( Input input )
+    {
+        return -diff< Var >( input );
+    }
+
+    static constexpr std::string str( std::string_view input ) { return fmt::format( "(-{0})", input ); }
+};
+
+
+template< typename Input >
+using Negate = UnaryOperator< Input, NegateOp >;
 
 
 template< typename Input >
@@ -386,7 +359,7 @@ class Add
 public:
     constexpr Add( Left left, Right right )
         : left_{ left }
-        , right_{ right}
+        , right_{ right }
     {
     }
 
@@ -419,7 +392,7 @@ class Subtract
 public:
     constexpr Subtract( Left left, Right right )
         : left_{ left }
-        , right_{ right}
+        , right_{ right }
     {
     }
 
@@ -452,7 +425,7 @@ class Multiply
 public:
     constexpr Multiply( Left left, Right right )
         : left_{ left }
-        , right_{ right}
+        , right_{ right }
     {
     }
 
@@ -485,7 +458,7 @@ class Divide
 public:
     constexpr Divide( Left left, Right right )
         : left_{ left }
-        , right_{ right}
+        , right_{ right }
     {
     }
 
@@ -520,6 +493,97 @@ private:
 
 
 template< typename Input >
+constexpr auto simplify( Input input )
+{
+    return input;
+}
+
+template< typename Left >
+constexpr auto simplify( Add< Left, Zero > input )
+{
+    return input.left();
+}
+
+template< typename Right >
+constexpr auto simplify( Add< Zero, Right > input )
+{
+    return input.right();
+}
+
+// template< typename Input >
+// constexpr auto simplify( Add< Input, Input > input )
+// {
+//     return Multiply{ Constant{ 2 }, input.left() };
+// }
+
+// template< typename Input, typename L, typename R >
+// constexpr auto simplify( Add< Constant< L >, Input > left, Add< Constant< R >, Input > right )
+// {
+//     return Multiply{ Constant{ left.left().value() + right.right().value() }, left.right() };
+// }
+
+template< typename Left >
+constexpr auto simplify( Subtract< Left, Zero > input )
+{
+    return input.left();
+}
+
+template< typename Right >
+constexpr auto simplify( Subtract< Zero, Right > input )
+{
+    return -input.right();
+}
+
+template< typename Left >
+constexpr auto simplify( Multiply< Left, Zero > )
+{
+    return Zero{};
+}
+
+template< typename Right >
+constexpr auto simplify( Multiply< Zero, Right > )
+{
+    return Zero{};
+}
+
+template< typename Left >
+constexpr auto simplify( Multiply< Left, One > input )
+{
+    return input.left();
+}
+
+template< typename Right >
+constexpr auto simplify( Multiply< One, Right > input )
+{
+    return input.right();
+}
+
+template< typename C1, typename C2 >
+constexpr auto simplify( Multiply< Constant< C1 >, Constant< C2 > > input )
+{
+    return Constant{ input.left().value() * input.right().value() };
+}
+
+template< typename Left, typename Right, typename C >
+constexpr auto simplify( Multiply< Left, Multiply< Constant< C >, Right > > input )
+{
+    return input.right().left() * input.left() * input.right().right();
+}
+
+template< typename Left, typename Right, typename C >
+constexpr auto simplify( Multiply< Left, Multiply< Right, Constant< C > > > input )
+{
+    return input.right().right() * input.left() * input.right().left();
+}
+
+template< typename Input >
+constexpr auto simplify( Negate< Negate< Input > > input )
+{
+    return input.input().input();
+}
+
+
+template< typename Input >
 constexpr auto operator-( Input input )
 {
     return simplify( Negate< Input >{ input } );
@@ -529,6 +593,12 @@ template< typename Left, typename Right >
 constexpr auto operator+( Left left, Right right )
 {
     return simplify( Add{ left, right } );
+}
+
+template< typename Left >
+constexpr auto operator+( Left left, int right )
+{
+    return simplify( Add{ left, Constant{ right } } );
 }
 
 template< typename Left, typename Right >
