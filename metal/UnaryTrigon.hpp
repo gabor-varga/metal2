@@ -1,5 +1,8 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_UNARY_TRIGON_HPP
+#define METAL_UNARY_TRIGON_HPP
+
 #include "UnaryOperator.hpp"
 #include "Common.hpp"
 #include <tuple>
@@ -60,10 +63,20 @@ struct CosOp
 
 
 template< typename Input >
-using Sin = UnaryOperator< Input, SinOp >;
+struct Sin : UnaryOperator< Input, detail::SinOp >
+{
+};
 
 template< typename Input >
-using Cos = UnaryOperator< Input, CosOp >;
+Sin( Input ) -> Sin< Input >;
+
+template< typename Input >
+struct Cos : UnaryOperator< Input, detail::CosOp >
+{
+};
+
+template< typename Input >
+Cos( Input ) -> Cos< Input >;
 
 
 template< typename Input >
@@ -79,3 +92,5 @@ constexpr auto cos( Input input )
 }
 
 } // metal
+
+#endif

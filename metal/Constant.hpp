@@ -1,8 +1,12 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_CONSTANT_HPP
+#define METAL_CONSTANT_HPP
+
 #include <tuple>
 #include <string>
 #include <fmt/core.h>
+#include <cmath>
 
 
 namespace metal
@@ -14,12 +18,6 @@ struct Zero
     constexpr auto eval( std::tuple< Args... > ) const
     {
         return 0;
-    }
-
-    template< typename Var >
-    constexpr auto deriv() const
-    {
-        // static_assert(false, "Can not differentiate Zero");
     }
 
     std::string str() const { return "Zero"; }
@@ -41,6 +39,42 @@ struct One
     }
 
     std::string str() const { return "One"; }
+};
+
+
+struct Pi
+{
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > ) const
+    {
+        return M_PI;
+    }
+
+    template< typename Var >
+    constexpr auto deriv() const
+    {
+        return Zero{};
+    }
+
+    std::string str() const { return "Pi"; }
+};
+
+
+struct TwoPi
+{
+    template< typename... Args >
+    constexpr auto eval( std::tuple< Args... > ) const
+    {
+        return 2 * M_PI;
+    }
+
+    template< typename Var >
+    constexpr auto deriv() const
+    {
+        return Zero{};
+    }
+
+    std::string str() const { return "TwoPi"; }
 };
 
 
@@ -74,3 +108,5 @@ private:
 };
 
 } // metal
+
+#endif

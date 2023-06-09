@@ -1,5 +1,8 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_UNARY_MATH_OPERATOR_HPP
+#define METAL_UNARY_MATH_OPERATOR_HPP
+
 #include <tuple>
 
 
@@ -31,3 +34,5 @@ public:
 private:
     Input input_;
 };
+
+#endif

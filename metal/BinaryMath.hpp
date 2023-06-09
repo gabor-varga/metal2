@@ -1,5 +1,8 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_BINARY_MATH_HPP
+#define METAL_BINARY_MATH_HPP
+
 #include "BinaryOperator.hpp"
 #include "Common.hpp"
 #include "Constant.hpp"
@@ -101,16 +104,44 @@ struct DivideOp
 
 
 template< typename Left, typename Right >
-using Add = BinaryOperator< Left, Right, detail::AddOp >;
+class Add : public BinaryOperator< Left, Right, detail::AddOp >
+{
+public:
+    Add( Left left, Right right )
+        : BinaryOperator< Left, Right, detail::AddOp >{ left, right }
+    {
+    }
+};
 
 template< typename Left, typename Right >
-using Subtract = BinaryOperator< Left, Right, detail::SubtractOp >;
+class Subtract : public BinaryOperator< Left, Right, detail::SubtractOp >
+{
+public:
+    Subtract( Left left, Right right )
+        : BinaryOperator< Left, Right, detail::SubtractOp >{ left, right }
+    {
+    }
+};
 
 template< typename Left, typename Right >
-using Multiply = BinaryOperator< Left, Right, detail::MultiplyOp >;
+class Multiply : public BinaryOperator< Left, Right, detail::MultiplyOp >
+{
+public:
+    Multiply( Left left, Right right )
+        : BinaryOperator< Left, Right, detail::MultiplyOp >{ left, right }
+    {
+    }
+};
 
 template< typename Left, typename Right >
-using Divide = BinaryOperator< Left, Right, detail::DivideOp >;
+class Divide : public BinaryOperator< Left, Right, detail::DivideOp >
+{
+public:
+    Divide( Left left, Right right )
+        : BinaryOperator< Left, Right, detail::DivideOp >{ left, right }
+    {
+    }
+};
 
 // Simplify rules
 
@@ -170,22 +201,58 @@ constexpr auto operator+( Left left, Right right )
     return simplify( Add{ left, right } );
 }
 
-// template< typename Left >
-// constexpr auto operator+( Left left, int right )
-// {
-//     return simplify( Add{ left, Constant{ right } } );
-// }
+template< typename Left >
+constexpr auto operator+( Left left, int right )
+{
+    return simplify( Add{ left, Constant{ right } } );
+}
 
-// template< typename Left >
-// constexpr auto operator+( Left left, double right )
-// {
-//     return simplify( Add{ left, Constant{ right } } );
-// }
+template< typename Left >
+constexpr auto operator+( Left left, double right )
+{
+    return simplify( Add{ left, Constant{ right } } );
+}
+
+template< typename Right >
+constexpr auto operator+( int left, Right right )
+{
+    return simplify( Add{ Constant{ left }, right } );
+}
+
+template< typename Right >
+constexpr auto operator+( double left, Right right )
+{
+    return simplify( Add{ Constant{ left }, right } );
+}
 
 template< typename Left, typename Right >
 constexpr auto operator-( Left left, Right right )
 {
     return simplify( Subtract{ left, right } );
+}
+
+template< typename Left >
+constexpr auto operator-( Left left, int right )
+{
+    return simplify( Subtract{ left, Constant{ right } } );
+}
+
+template< typename Left >
+constexpr auto operator-( Left left, double right )
+{
+    return simplify( Subtract{ left, Constant{ right } } );
+}
+
+template< typename Right >
+constexpr auto operator-( int left, Right right )
+{
+    return simplify( Subtract{ Constant{ left }, right } );
+}
+
+template< typename Right >
+constexpr auto operator-( double left, Right right )
+{
+    return simplify( Subtract{ Constant{ left }, right } );
 }
 
 template< typename Left, typename Right >
@@ -194,16 +261,28 @@ constexpr auto operator*( Left left, Right right )
     return simplify( Multiply{ left, right } );
 }
 
-// template< typename Left >
-// constexpr auto operator*( Left left, double right )
-// {
-//     return simplify( Multiply{ Constant{ right }, left } );
-// }
+template< typename Left >
+constexpr auto operator*( Left left, int right )
+{
+    return simplify( Multiply{ left, Constant{ right } } );
+}
 
-// template< typename Right >
-// constexpr auto operator*( double left, Right right )
-// {
-//     return simplify( Multiply{ Constant{ left }, right } );
+template< typename Left >
+constexpr auto operator*( Left left, double right )
+{
+    return simplify( Multiply{ left, Constant{ right } } );
+}
+
+template< typename Right >
+constexpr auto operator*( int left, Right right )
+{
+    return simplify( Multiply{ Constant{ left }, right } );
+}
+
+template< typename Right >
+constexpr auto operator*( double left, Right right )
+{
+    return simplify( Multiply{ Constant{ left }, right } );
 }
 
 template< typename Left, typename Right >
@@ -212,4 +291,30 @@ constexpr auto operator/( Left left, Right right )
     return simplify( Divide{ left, right } );
 }
 
+template< typename Left >
+constexpr auto operator/( Left left, int right )
+{
+    return simplify( Divide{ left, Constant{ right } } );
+}
+
+template< typename Left >
+constexpr auto operator/( Left left, double right )
+{
+    return simplify( Divide{ left, Constant{ right } } );
+}
+
+template< typename Right >
+constexpr auto operator/( int left, Right right )
+{
+    return simplify( Divide{ Constant{ left }, right } );
+}
+
+template< typename Right >
+constexpr auto operator/( double left, Right right )
+{
+    return simplify( Divide{ Constant{ left }, right } );
+}
+
 } // metal
+
+#endif

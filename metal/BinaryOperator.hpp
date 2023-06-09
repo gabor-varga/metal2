@@ -1,5 +1,8 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_BINARY_OPERATOR_HPP
+#define METAL_BINARY_OPERATOR_HPP
+
 #include <tuple>
 
 
@@ -34,3 +37,5 @@ private:
     Left left_;
     Right right_;
 };
+
+#endif

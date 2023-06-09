@@ -1,7 +1,7 @@
 /** Copyright Gabor Varga 2023 */
 
-#include "metal/Expression.hpp"
-
+#include "metal/Core.hpp"
+#include <iostream>
 #include <catch2/catch_test_macros.hpp>
 // #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
@@ -16,54 +16,49 @@ TEST_CASE( "Test basic expression" )
 {
     SECTION( "Test basic stuff" )
     {
-        using X = Variable< 0 >;
-        using Y = Variable< 1 >;
+        using X = metal::Variable< 0 >;
+        using Y = metal::Variable< 1 >;
         const X x{ "x" };
         const Y y{ "y" };
-        // const auto z = x * ( Constant{ 2 } * y );
-        // const auto z = x * Constant{ 3 } * ( y * Constant{ 2 } );
-        // std::cout << z.str() << std::endl;
-        // const std::tuple args{ 1.0, 2.0 };
-        // std::cout << z.eval( args ) << std::endl;
-
-        // const auto z = sqrt( x * y ) * square( x + y );
-        // const auto dzdx = diff( z, x );
-        // const auto dzdy = diff( z, y );
-
-        // std::cout << z.str() << std::endl;
-        // std::cout << dzdx.str() << std::endl;
-        // std::cout << dzdy.str() << std::endl;
-
-        const auto z = cube( Constant{ 2 } * x );
+    
+        const auto z = metal::TwoPi{} * sqrt( cube( x ) / y );
         const auto dzdx = diff( z, x );
+        const auto dzdy = diff( z, y );
 
         std::cout << z.str() << std::endl;
         std::cout << dzdx.str() << std::endl;
+        std::cout << dzdy.str() << std::endl;
+
+        // const auto z = sin( 2 * x + 1.5 );
+        // const auto dzdx = diff( z, x );
+
+        // std::cout << z.str() << std::endl;
+        // std::cout << dzdx.str() << std::endl;
     }
 
     SECTION( "Test trigonometric functions" )
     {
-        // using X = Variable< 0 >;
-        // const X x{ "x" };
-        // const std::tuple args{ 1.0 };
-        // fmt::println( "{0} = {1}", x.str(), x.eval( args ) );
-        // const auto xd = diff( x, x );
-        // fmt::println( "{0} = {1}", xd.str(), xd.eval( args ) );
+        using X = metal::Variable< 0 >;
+        const X x{ "x" };
+        const std::tuple args{ 1.0 };
+        fmt::println( "{0} = {1}", x.str(), x.eval( args ) );
+        const auto xd = diff( x, x );
+        fmt::println( "{0} = {1}", xd.str(), xd.eval( args ) );
 
-        // const auto y = sin( x );
-        // fmt::println( "{0} = {1}", y.str(), y.eval( args ) );
+        const auto y = sin( x );
+        fmt::println( "{0} = {1}", y.str(), y.eval( args ) );
     
-        // const auto d1 = diff( y, x );
-        // fmt::println( "{0} = {1}", d1.str(), d1.eval( args ) );
+        const auto d1 = diff( y, x );
+        fmt::println( "{0} = {1}", d1.str(), d1.eval( args ) );
 
-        // const auto d2 = diff( d1, x );
-        // fmt::println( "{0} = {1}", d2.str(), d2.eval( args ) );
+        const auto d2 = diff( d1, x );
+        fmt::println( "{0} = {1}", d2.str(), d2.eval( args ) );
 
-        // const auto d3 = diff( d2, x );
-        // fmt::println( "{0} = {1}", d3.str(), d3.eval( args ) );
+        const auto d3 = diff( d2, x );
+        fmt::println( "{0} = {1}", d3.str(), d3.eval( args ) );
 
-        // const auto d4 = diff( d3, x );
-        // fmt::println( "{0} = {1}", d4.str(), d4.eval( args ) );
+        const auto d4 = diff( d3, x );
+        fmt::println( "{0} = {1}", d4.str(), d4.eval( args ) );
 
         // using SMA = Variable< 0 >;
         // using GM = Variable< 1 >;

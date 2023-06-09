@@ -1,5 +1,9 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_VARIABLE_HPP
+#define METAL_VARIABLE_HPP
+
+#include "Constant.hpp"
 #include <tuple>
 #include <string>
 #include <fmt/core.h>
@@ -45,3 +49,5 @@ private:
 };
 
 } // metal
+
+#endif

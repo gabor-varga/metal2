@@ -1,5 +1,8 @@
 /** Copyright Gabor Varga 2023 */
 
+#ifndef METAL_UNARY_MATH_HPP
+#define METAL_UNARY_MATH_HPP
+
 #include "UnaryOperator.hpp"
 #include "Common.hpp"
 #include <cmath>
@@ -34,20 +37,19 @@ struct NegateOp
 };
 
 
-template< typename Input >
 struct SquareOp
 {
     template< typename Input, typename... Args >
     static constexpr auto eval( Input input, std::tuple< Args... > args )
     {
-        const auto tmp = input_.eval( args );
+        const auto tmp = input.eval( args );
         return tmp * tmp;
     }
 
     template< typename Var, typename Input >
     static constexpr auto deriv( Input input )
     {
-        return Constant{ 2 } * input_ * diff< Var >( input_ );
+        return Constant{ 2 } * input * diff< Var >( input );
     }
 
     template< typename Input >
@@ -58,20 +60,19 @@ struct SquareOp
 };
 
 
-template< typename Input >
 struct CubeOp
 {
     template< typename Input, typename... Args >
     static constexpr auto eval( Input input, std::tuple< Args... > args )
     {
-        const auto tmp = input_.eval( args );
+        const auto tmp = input.eval( args );
         return tmp * tmp * tmp;
     }
 
     template< typename Var, typename Input >
     static constexpr auto deriv( Input input )
     {
-        return Constant{ 3 } * square( input_ ) * diff< Var >( input_ );
+        return Constant{ 3 } * square( input ) * diff< Var >( input );
     }
 
     template< typename Input >
@@ -82,19 +83,18 @@ struct CubeOp
 };
 
 
-template< typename Input >
 struct SquareRootOp
 {
     template< typename Input, typename... Args >
     static constexpr auto eval( Input input, std::tuple< Args... > args )
     {
-        return std::sqrt( input_.eval( args ) );
+        return std::sqrt( input.eval( args ) );
     }
 
     template< typename Var, typename Input >
     static constexpr auto deriv( Input input )
     {
-        return Constant{ 0.5 } / sqrt( input_ ) * diff< Var >( input_ );
+        return Constant{ 0.5 } / sqrt( input ) * diff< Var >( input );
     }
 
     template< typename Input >
@@ -108,16 +108,36 @@ struct SquareRootOp
 
 
 template< typename Input >
-using Negate = UnaryOperator< Input, NegateOp >;
+class Negate : public UnaryOperator< Input, detail::NegateOp >
+{
+};
 
 template< typename Input >
-using Square = UnaryOperator< Input, SquareOp >;
+Negate( Input ) -> Negate< Input >;
 
 template< typename Input >
-using Cube = UnaryOperator< Input, CubeOp >;
+class Square : public UnaryOperator< Input, detail::SquareOp >
+{
+};
 
 template< typename Input >
-using SquareRoot = UnaryOperator< Input, SquareRootOp >;
+Square( Input ) -> Square< Input >;
+
+template< typename Input >
+class Cube : public UnaryOperator< Input, detail::CubeOp >
+{
+};
+
+template< typename Input >
+Cube( Input ) -> Cube< Input >;
+
+template< typename Input >
+class SquareRoot : public UnaryOperator< Input, detail::SquareRootOp >
+{
+};
+
+template< typename Input >
+SquareRoot( Input ) -> SquareRoot< Input >;
 
 
 template< typename Input >
@@ -152,3 +172,5 @@ constexpr auto simplify( Negate< Negate< Input > > input )
 }
 
 } // metal
+
+#endif
