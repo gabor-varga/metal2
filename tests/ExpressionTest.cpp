@@ -6,9 +6,20 @@
 // #include <catch2/matchers/catch_matchers_floating_point.hpp>
 
 
-consteval auto foo( auto x )
+double sqrt( double x )
 {
-    return x;
+    return std::sqrt( x );
+}
+
+constexpr double cube( double x )
+{
+    return x * x * x;
+}
+
+
+constexpr auto foo( auto x, auto y )
+{
+    return sqrt( cube( x ) / y );
 }
 
 
@@ -16,10 +27,10 @@ TEST_CASE( "Test basic expression" )
 {
     SECTION( "Test basic stuff" )
     {
-        using X = metal::Variable< 0 >;
-        using Y = metal::Variable< 1 >;
-        const X x{ "x" };
-        const Y y{ "y" };
+        using X = metal::Variable< 0, double, "x" >;
+        using Y = metal::Variable< 1, double, "y" >;
+        const X x{ 1.0 };
+        const Y y{ 2.0 };
     
         const auto z = metal::TwoPi{} * sqrt( cube( x ) / y );
         const auto dzdx = diff( z, x );
@@ -29,17 +40,16 @@ TEST_CASE( "Test basic expression" )
         std::cout << dzdx.str() << std::endl;
         std::cout << dzdy.str() << std::endl;
 
-        // const auto z = sin( 2 * x + 1.5 );
-        // const auto dzdx = diff( z, x );
-
-        // std::cout << z.str() << std::endl;
-        // std::cout << dzdx.str() << std::endl;
+        const std::tuple args{ 1.0, 2.0 };
+        std::cout << z.eval( args ) << std::endl;
+        std::cout << dzdx.eval( args ) << std::endl;
+        std::cout << dzdy.eval( args ) << std::endl;
     }
 
     SECTION( "Test trigonometric functions" )
     {
-        using X = metal::Variable< 0 >;
-        const X x{ "x" };
+        using X = metal::Variable< 0, double, "x" >;
+        const X x{ 1.0 };
         const std::tuple args{ 1.0 };
         fmt::println( "{0} = {1}", x.str(), x.eval( args ) );
         const auto xd = diff( x, x );
