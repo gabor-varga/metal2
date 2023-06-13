@@ -17,10 +17,9 @@ public:
 
     constexpr auto input() const { return input_; }
 
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > args ) const
+    constexpr auto eval() const
     {
-        return Operator::eval( input_, args );
+        return Operator::eval( input_ );
     }
 
     template< typename Var >

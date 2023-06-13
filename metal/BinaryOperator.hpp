@@ -19,10 +19,9 @@ public:
     constexpr auto left() const { return left_; }
     constexpr auto right() const { return right_; }
 
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > args ) const
+    constexpr auto eval() const
     {
-        return Operator::eval( left_, right_, args );
+        return Operator::eval( left_, right_ );
     }
 
     template< typename Var >

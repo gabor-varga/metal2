@@ -18,10 +18,10 @@ namespace detail
 
 struct AddOp
 {
-    template< typename Left, typename Right, typename... Args >
-    static constexpr auto eval( Left left, Right right, std::tuple< Args... > args )
+    template< typename Left, typename Right >
+    static constexpr auto eval( Left left, Right right )
     {
-        return left.eval( args ) + right.eval( args );
+        return left.eval() + right.eval();
     }
 
     template< typename Var, typename Left, typename Right >
@@ -39,10 +39,10 @@ struct AddOp
 
 struct SubtractOp
 {
-    template< typename Left, typename Right, typename... Args >
-    static constexpr auto eval( Left left, Right right, std::tuple< Args... > args )
+    template< typename Left, typename Right >
+    static constexpr auto eval( Left left, Right right )
     {
-        return left.eval( args ) - right.eval( args );
+        return left.eval() - right.eval();
     }
 
     template< typename Var, typename Left, typename Right >
@@ -60,10 +60,10 @@ struct SubtractOp
 
 struct MultiplyOp
 {
-    template< typename Left, typename Right, typename... Args >
-    static constexpr auto eval( Left left, Right right, std::tuple< Args... > args )
+    template< typename Left, typename Right >
+    static constexpr auto eval( Left left, Right right )
     {
-        return left.eval( args ) * right.eval( args );
+        return left.eval() * right.eval();
     }
 
     template< typename Var, typename Left, typename Right >
@@ -81,10 +81,10 @@ struct MultiplyOp
 
 struct DivideOp
 {
-    template< typename Left, typename Right, typename... Args >
-    static constexpr auto eval( Left left, Right right, std::tuple< Args... > args )
+    template< typename Left, typename Right >
+    static constexpr auto eval( Left left, Right right )
     {
-        return left.eval( args ) / right.eval( args );
+        return left.eval() / right.eval();
     }
 
     template< typename Var, typename Left, typename Right >

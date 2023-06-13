@@ -41,49 +41,26 @@ struct StringLiteral
 //     }
 // }
 
-static constexpr auto EmptyStringLiteral = StringLiteral{ "" };
-
 }
 
 
-template< int ID_, typename Value, detail::StringLiteral Name_ = detail::EmptyStringLiteral >
+template< detail::StringLiteral Name_, typename Value >
 class Variable
 {
 public:
-    static constexpr int ID = ID_;
     static constexpr detail::StringLiteral Name = Name_;
 
     explicit Variable( Value value )
         : value_{ value }
     {
-        if constexpr ( Name.Size == 1 )
-        {
-            name_ = fmt::format( "Var_{0}", ID );
-        }
-        else
-        {
-            name_ = Name.value;
-        }
     }
 
-
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > args ) const
-    {
-        if constexpr ( ID > std::tuple_size_v< std::tuple< Args... > > )
-        {
-            return value_;
-        }
-        else
-        {
-            return std::get< ID >( args );
-        }
-    }
+    constexpr auto eval() const { return value_; }
 
     template< typename Var >
     constexpr auto deriv() const
     {
-        if constexpr ( Var::ID == ID )
+        if constexpr ( Var::Name == Name )
         {
             return One{};
         }
@@ -93,13 +70,16 @@ public:
         }
     }
 
-    std::string str() const { return name_; }
+    std::string str() const { return Name.value; }
 
 private:
-    std::string name_;
     Value value_;
-
 };
+
+template< detail::StringLiteral Name >
+using Double = Variable< Name, double >;
+
+#define DOUBLE( name, value ) metal::Double< #name > name{ value };
 
 } // metal
 

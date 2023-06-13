@@ -17,10 +17,10 @@ namespace detail
 
 struct NegateOp
 {
-    template< typename Input, typename... Args >
-    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    template< typename Input >
+    static constexpr auto eval( Input input )
     {
-        return -input.eval( args );
+        return -input.eval();
     }
 
     template< typename Var, typename Input >
@@ -39,10 +39,10 @@ struct NegateOp
 
 struct SquareOp
 {
-    template< typename Input, typename... Args >
-    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    template< typename Input >
+    static constexpr auto eval( Input input )
     {
-        const auto tmp = input.eval( args );
+        const auto tmp = input.eval();
         return tmp * tmp;
     }
 
@@ -62,10 +62,10 @@ struct SquareOp
 
 struct CubeOp
 {
-    template< typename Input, typename... Args >
-    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    template< typename Input >
+    static constexpr auto eval( Input input )
     {
-        const auto tmp = input.eval( args );
+        const auto tmp = input.eval();
         return tmp * tmp * tmp;
     }
 
@@ -85,10 +85,10 @@ struct CubeOp
 
 struct SquareRootOp
 {
-    template< typename Input, typename... Args >
-    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    template< typename Input >
+    static constexpr auto eval( Input input )
     {
-        return std::sqrt( input.eval( args ) );
+        return std::sqrt( input.eval() );
     }
 
     template< typename Var, typename Input >
@@ -157,6 +157,12 @@ constexpr auto cube( Input input )
 {
     return simplify( Cube{ input } );
 }
+
+// template <typename T>
+// concept HasFunc1 = 
+//   requires(T t) {
+//       { t.eval() };
+//   };
 
 template< typename Input >
 constexpr auto sqrt( Input input )

@@ -19,10 +19,10 @@ namespace detail
 
 struct SinOp
 {
-    template< typename Input, typename... Args >
-    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    template< typename Input >
+    static constexpr auto eval( Input input )
     {
-        return std::sin( input.eval( args ) );
+        return std::sin( input.eval() );
     }
 
     template< typename Var, typename Input >
@@ -40,10 +40,10 @@ struct SinOp
 
 struct CosOp
 {
-    template< typename Input, typename... Args >
-    static constexpr auto eval( Input input, std::tuple< Args... > args )
+    template< typename Input >
+    static constexpr auto eval( Input input )
     {
-        return std::cos( input.eval( args ) );
+        return std::cos( input.eval() );
     }
 
     template< typename Var, typename Input >

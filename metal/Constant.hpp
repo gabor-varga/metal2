@@ -14,11 +14,7 @@ namespace metal
 
 struct Zero
 {
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > ) const
-    {
-        return 0;
-    }
+    constexpr auto eval() const { return 0; }
 
     std::string str() const { return "Zero"; }
 };
@@ -26,11 +22,7 @@ struct Zero
 
 struct One
 {
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > ) const
-    {
-        return 1;
-    }
+    constexpr auto eval() const { return 1; }
 
     template< typename Var >
     constexpr auto deriv() const
@@ -44,11 +36,7 @@ struct One
 
 struct Pi
 {
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > ) const
-    {
-        return M_PI;
-    }
+    constexpr auto eval() const { return M_PI; }
 
     template< typename Var >
     constexpr auto deriv() const
@@ -62,11 +50,7 @@ struct Pi
 
 struct TwoPi
 {
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > ) const
-    {
-        return 2 * M_PI;
-    }
+    constexpr auto eval() const { return 2 * M_PI; }
 
     template< typename Var >
     constexpr auto deriv() const
@@ -89,11 +73,7 @@ public:
 
     const auto value() const { return value_; }
 
-    template< typename... Args >
-    constexpr auto eval( std::tuple< Args... > ) const
-    {
-        return value_;
-    }
+    constexpr auto eval() const { return value_; }
 
     template< typename Var >
     constexpr auto deriv() const
